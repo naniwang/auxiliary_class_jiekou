@@ -150,6 +150,27 @@ app.get("/delstudent", (req, res) => {
     })
   })
 })
+//修改学生密码
+app.get("/update/student/pwd", (req, res) => {
+  var id = parseInt(req.query.id);
+  var pwd = req.query.password
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("student", (err, coll) => {
+      coll.update({
+        id: id
+      }, {
+        $set: {
+          password: pwd
+        }
+      }, () => {
+        res.send({
+          code: 200
+        });
+        db.close();
+      })
+    })
+  })
+})
 //查询课程列表
 app.get("/courselist", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
@@ -165,9 +186,9 @@ app.get("/courselist", (req, res) => {
 app.get("/addcourse", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
+  var obj = {}
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
-      var obj = {}
       if (id > 0) {
         coll.update({
           id: id
@@ -200,6 +221,34 @@ app.get("/deletecourse", (req, res) => {
     })
   })
 })
+//添加管理员
+app.get("/add/admin", (req, res) => {
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("admin", (err, coll) => {
+      var id = 0
+      var data = coll.find().sort({
+        id: -1
+      })
+      if (data.length > 0) {
+        id = data[0].id++
+      }
+      var obj = req.query
+      obj.id = id
+      // var obj = {
+      //   id: id,
+      //   name: req.query.name,
+      //   mobile: req.query.mobile,
+      //   account: req.query.account,
+      //   password: req.query.password
+      // }
+      coll.insert(obj, () => {
+        res.send('添加成功');
+        db.close();
+      })
+    })
+  })
+})
+
 //查询教师列表
 app.get("/teacherlist", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
