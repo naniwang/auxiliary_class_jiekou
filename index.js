@@ -47,7 +47,7 @@ app.get('/register', (req, res) => {
   })
 })
 //学生登陆接口
-app.get("/studentlogin", (req, res) => {
+app.get("/student/login", (req, res) => {
   var account = req.query.account;
   var password = req.query.password;
   mongodb.connect(db_str, (err, db) => {
@@ -74,7 +74,7 @@ app.get("/studentlogin", (req, res) => {
   })
 })
 //管理员登陆接口
-app.get("/managelogin", (req, res) => {
+app.get("/manage/login", (req, res) => {
   var account = req.query.account;
   var password = req.query.password;
   mongodb.connect(db_str, (err, db) => {
@@ -101,7 +101,7 @@ app.get("/managelogin", (req, res) => {
   })
 })
 //查询学生列表
-app.get("/studentlist", (req, res) => {
+app.get("/student/list", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
       coll.find({}).toArray((err, data) => {
@@ -112,7 +112,7 @@ app.get("/studentlist", (req, res) => {
   })
 })
 //添加或编辑学生
-app.get("/addstudent", (req, res) => {
+app.get("/add/student", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
   mongodb.connect(db_str, (err, db) => {
@@ -137,7 +137,7 @@ app.get("/addstudent", (req, res) => {
   })
 })
 //删除学生
-app.get("/delstudent", (req, res) => {
+app.get("/del/student", (req, res) => {
   var id = parseInt(req.query.id);
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
@@ -172,7 +172,7 @@ app.get("/update/student/pwd", (req, res) => {
   })
 })
 //查询课程列表
-app.get("/courselist", (req, res) => {
+app.get("/course/list", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
       coll.find({}).toArray((err, data) => {
@@ -183,7 +183,7 @@ app.get("/courselist", (req, res) => {
   })
 })
 //添加或编辑课程
-app.get("/addcourse", (req, res) => {
+app.get("/add/course", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
   var obj = {}
@@ -208,7 +208,7 @@ app.get("/addcourse", (req, res) => {
   })
 })
 //删除课程
-app.get("/deletecourse", (req, res) => {
+app.get("/delete/course", (req, res) => {
   var id = parseInt(req.query.id);
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
@@ -250,7 +250,7 @@ app.get("/add/admin", (req, res) => {
 })
 
 //查询教师列表
-app.get("/teacherlist", (req, res) => {
+app.get("/teacher/list", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("teacher", (err, coll) => {
       coll.find({}).toArray((err, data) => {
@@ -261,7 +261,7 @@ app.get("/teacherlist", (req, res) => {
   })
 })
 //添加或编辑教师
-app.get("/addteacher", (req, res) => {
+app.get("/add/teacher", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
   mongodb.connect(db_str, (err, db) => {
@@ -286,7 +286,7 @@ app.get("/addteacher", (req, res) => {
   })
 })
 //删除教师
-app.get("/deleteteacher", (req, res) => {
+app.get("/delete/teacher", (req, res) => {
   var id = parseInt(req.query.id);
   mongodb.connect(db_str, (err, db) => {
     db.collection("teacher", (err, coll) => {
