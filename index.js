@@ -59,7 +59,7 @@ app.get("/student/login", (req, res) => {
         if (data.length > 0) {
           res.json({
             code: 200,
-            msg: "登陆成功"
+            response: 'students'
           })
           db.close();
         } else {
@@ -86,7 +86,7 @@ app.get("/manage/login", (req, res) => {
         if (data.length > 0) {
           res.json({
             code: 200,
-            msg: "登陆成功"
+            response: 'admins'
           })
           db.close();
         } else {
@@ -100,12 +100,48 @@ app.get("/manage/login", (req, res) => {
     })
   })
 })
+//获取用户信息
+app.get("/user/info", (req, res) => {
+  var type = req.query.type
+  var account = req.query.account
+  mongodb.connect(db_str, (err, db) => {
+    let collect = type == 'students' ? 'student' : 'admin'
+    db.collection(collect, (err, coll) => {
+      coll.find({
+        account: account
+      }).toArray((err, data) => {
+        if (data.length > 0) {
+          // let callbackData = {}
+          res.json({
+            code: 200,
+            response: data[0]
+          })
+          // res.send(data[0])
+        } else {
+          res.json({
+            code: 201,
+            msg: '信息获取失败'
+          })
+        }
+        db.close();
+      })
+    })
+  })
+})
 //查询学生列表
 app.get("/student/list", (req, res) => {
+  var obj = {
+    name: req.query.name || '',
+    stu_no: req.query.stu_no || '',
+  }
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
-      coll.find({}).toArray((err, data) => {
-        res.send(data)
+      coll.find(obj).toArray((err, data) => {
+        res.json({
+          code: 200,
+          response: data
+        })
+        // res.send(data)
         db.close();
       })
     })
@@ -115,21 +151,29 @@ app.get("/student/list", (req, res) => {
 app.get("/add/student", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
+  var obj = req.query
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
-      var obj = {}
       if (id > 0) {
         coll.update({
           id: id
         }, {
           $set: obj
         }, () => {
-          res.send('编辑成功');
+          res.json({
+            code: 200,
+            response: true
+          })
+          // res.send('编辑成功');
           db.close();
         })
       } else {
         coll.insert(obj, () => {
-          res.send('添加成功');
+          res.json({
+            code: 200,
+            response: true
+          })
+          // res.send('添加成功');
           db.close();
         })
       }
@@ -138,13 +182,17 @@ app.get("/add/student", (req, res) => {
 })
 //删除学生
 app.get("/del/student", (req, res) => {
-  var id = parseInt(req.query.id);
+  var stu_no = parseInt(req.query.stu_no);
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
       coll.remove({
-        id: id
+        stu_no: stu_no
       }, () => {
-        res.send('删除成功');
+        res.json({
+          code: 200,
+          response: true
+        })
+        // res.send('删除成功');
         db.close();
       })
     })
@@ -152,20 +200,46 @@ app.get("/del/student", (req, res) => {
 })
 //修改学生密码
 app.get("/update/student/pwd", (req, res) => {
-  var id = parseInt(req.query.id);
+  var stu_no = parseInt(req.query.stu_no);
   var pwd = req.query.password
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
       coll.update({
-        id: id
+        stu_no: stu_no
       }, {
         $set: {
           password: pwd
         }
       }, () => {
-        res.send({
-          code: 200
+        res.json({
+          code: 200,
+          response: true
         });
+        db.close();
+      })
+    })
+  })
+})
+//获取学生信息详情(根据学号查询)
+app.get("/student/info", (req, res) => {
+  var stu_no = req.query.stu_no
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("student", (err, coll) => {
+      coll.find({
+        stu_no: stu_no
+      }).toArray((err, data) => {
+        if (data.length > 0) {
+          res.json({
+            code: 200,
+            response: data[0]
+          })
+          // res.send(data[0])
+        } else {
+          res.json({
+            code: 201,
+            msg: '信息获取失败'
+          })
+        }
         db.close();
       })
     })
@@ -173,10 +247,18 @@ app.get("/update/student/pwd", (req, res) => {
 })
 //查询课程列表
 app.get("/course/list", (req, res) => {
+  var obj = {
+    name: req.query.name || '',
+    course_no: req.query.course_no || null
+  }
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
-      coll.find({}).toArray((err, data) => {
-        res.send(data)
+      coll.find(obj).toArray((err, data) => {
+        res.json({
+          code: 200,
+          response: data
+        })
+        // res.send(data)
         db.close();
       })
     })
@@ -186,7 +268,7 @@ app.get("/course/list", (req, res) => {
 app.get("/add/course", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
-  var obj = {}
+  var obj = req.query
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
       if (id > 0) {
@@ -195,12 +277,20 @@ app.get("/add/course", (req, res) => {
         }, {
           $set: obj
         }, () => {
-          res.send('编辑成功');
+          res.json({
+            code: 200,
+            response: true
+          })
+          // res.send('编辑成功');
           db.close();
         })
       } else {
         coll.insert(obj, () => {
-          res.send('添加成功');
+          res.json({
+            code: 200,
+            response: true
+          })
+          // res.send('添加成功');
           db.close();
         })
       }
@@ -215,7 +305,54 @@ app.get("/delete/course", (req, res) => {
       coll.remove({
         id: id
       }, () => {
-        res.send('删除成功');
+        res.json({
+          code: 200,
+          response: true
+        })
+        // res.send('删除成功');
+        db.close();
+      })
+    })
+  })
+})
+//获取课程信息详情(根据id查询)
+app.get("/student/info", (req, res) => {
+  var id = req.query.id
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("course", (err, coll) => {
+      coll.find({
+        id: id
+      }).toArray((err, data) => {
+        if (data.length > 0) {
+          res.json({
+            code: 200,
+            response: data[0]
+          })
+        } else {
+          res.json({
+            code: 201,
+            msg: "信息获取失败"
+          })
+        }
+        // res.send(data)
+        db.close();
+      })
+    })
+  })
+})
+//查询管理员列表
+app.get("/admin/list", (req, res) => {
+  var obj = {
+    name: req.query.name || '',
+  }
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("admin", (err, coll) => {
+      coll.find(obj).toArray((err, data) => {
+        res.json({
+          code: 200,
+          response: data
+        })
+        // res.send(data)
         db.close();
       })
     })
@@ -225,24 +362,63 @@ app.get("/delete/course", (req, res) => {
 app.get("/add/admin", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("admin", (err, coll) => {
-      var id = 0
-      var data = coll.find().sort({
-        id: -1
+      coll.find({
+        account: req.query.account
+      }).toArray((err, data) => {
+        if (data.length > 0) {
+          res.json({
+            code: 201,
+            msg: "该账户已存在"
+          })
+        } else {
+          var id = 0
+          var data = coll.find().sort({
+            id: -1
+          })
+          if (data.length > 0) {
+            id = data[0].id++
+          }
+          // var obj = req.query
+          obj.id = id
+          var obj = {
+            id: id,
+            status: 1,
+            name: req.query.name,
+            mobile: req.query.mobile,
+            account: req.query.account,
+            password: req.query.password
+          }
+          coll.insert(obj, () => {
+            res.json({
+              code: 200,
+              response: true
+            })
+            // res.send('添加成功');
+            db.close();
+          })
+
+        }
       })
-      if (data.length > 0) {
-        id = data[0].id++
-      }
-      var obj = req.query
-      obj.id = id
-      // var obj = {
-      //   id: id,
-      //   name: req.query.name,
-      //   mobile: req.query.mobile,
-      //   account: req.query.account,
-      //   password: req.query.password
-      // }
-      coll.insert(obj, () => {
-        res.send('添加成功');
+    })
+  })
+})
+//禁用或启用管理员
+app.get("/update/admin/status", (req, res) => {
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("admin", (err, coll) => {
+      var id = req.query.id
+      var status = req.query.status
+      coll.update({
+        id: id
+      }, {
+        $set: {
+          status: status
+        }
+      }, () => {
+        res.json({
+          code: 200,
+          response: true
+        });
         db.close();
       })
     })
