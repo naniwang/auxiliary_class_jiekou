@@ -5,8 +5,18 @@ var mongodb = require('mongodb').MongoClient;
 var db_str = "mongodb://localhost:27017/mydb"
 app.use(cors())
 
+app.all('*', function (req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "X-Requested-With");
+  res.header("Access-Control-Allow-Methods", "PUT,POST,GET,DELETE,OPTIONS");
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Content-Length, Authorization, Accept, X-Requested-With , yourHeaderFeild');
+  res.header("X-Powered-By", ' 3.2.1')
+  res.header("Content-Type", "application/json;charset=UTF-8");
+  next();
+});
+
 //注册接口
-app.get('/register', (req, res) => {
+app.get('/api/register', (req, res) => {
   // var username=req.query.username;
   var mobile = req.query.mobile;
   var password = req.query.password;
@@ -47,7 +57,7 @@ app.get('/register', (req, res) => {
   })
 })
 //学生登陆接口
-app.get("/student/login", (req, res) => {
+app.get("/api/student/login", (req, res) => {
   var account = req.query.account;
   var password = req.query.password;
   mongodb.connect(db_str, (err, db) => {
@@ -74,7 +84,7 @@ app.get("/student/login", (req, res) => {
   })
 })
 //管理员登陆接口
-app.get("/manage/login", (req, res) => {
+app.get("/api/manage/login", (req, res) => {
   var account = req.query.account;
   var password = req.query.password;
   mongodb.connect(db_str, (err, db) => {
@@ -101,7 +111,7 @@ app.get("/manage/login", (req, res) => {
   })
 })
 //获取用户信息
-app.get("/user/info", (req, res) => {
+app.get("/api/user/info", (req, res) => {
   var type = req.query.type
   var account = req.query.account
   mongodb.connect(db_str, (err, db) => {
@@ -129,7 +139,8 @@ app.get("/user/info", (req, res) => {
   })
 })
 //查询学生列表
-app.get("/student/list", (req, res) => {
+app.get("/api/student/list", (req, res, next) => {
+  alert('33333333333333')
   var obj = {
     name: req.query.name || '',
     stu_no: req.query.stu_no || '',
@@ -148,7 +159,7 @@ app.get("/student/list", (req, res) => {
   })
 })
 //添加或编辑学生
-app.get("/add/student", (req, res) => {
+app.get("/api/add/student", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
   var obj = req.query
@@ -181,7 +192,7 @@ app.get("/add/student", (req, res) => {
   })
 })
 //删除学生
-app.get("/del/student", (req, res) => {
+app.get("/api/del/student", (req, res) => {
   var stu_no = parseInt(req.query.stu_no);
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
@@ -199,7 +210,7 @@ app.get("/del/student", (req, res) => {
   })
 })
 //修改学生密码
-app.get("/update/student/pwd", (req, res) => {
+app.get("/api/update/student/pwd", (req, res) => {
   var stu_no = parseInt(req.query.stu_no);
   var pwd = req.query.password
   mongodb.connect(db_str, (err, db) => {
@@ -221,7 +232,7 @@ app.get("/update/student/pwd", (req, res) => {
   })
 })
 //获取学生信息详情(根据学号查询)
-app.get("/student/info", (req, res) => {
+app.get("/api/student/info", (req, res) => {
   var stu_no = req.query.stu_no
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
@@ -246,7 +257,7 @@ app.get("/student/info", (req, res) => {
   })
 })
 //查询课程列表
-app.get("/course/list", (req, res) => {
+app.get("/api/course/list", (req, res) => {
   var obj = {
     name: req.query.name || '',
     course_no: req.query.course_no || null
@@ -265,7 +276,7 @@ app.get("/course/list", (req, res) => {
   })
 })
 //添加或编辑课程
-app.get("/add/course", (req, res) => {
+app.get("/api/add/course", (req, res) => {
   var id = 0;
   id = req.query.id ? req.query.id : 0
   var obj = req.query
@@ -298,7 +309,7 @@ app.get("/add/course", (req, res) => {
   })
 })
 //删除课程
-app.get("/delete/course", (req, res) => {
+app.get("/api/delete/course", (req, res) => {
   var id = parseInt(req.query.id);
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
@@ -316,7 +327,7 @@ app.get("/delete/course", (req, res) => {
   })
 })
 //获取课程信息详情(根据id查询)
-app.get("/student/info", (req, res) => {
+app.get("/api/student/info", (req, res) => {
   var id = req.query.id
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
@@ -341,7 +352,7 @@ app.get("/student/info", (req, res) => {
   })
 })
 //查询管理员列表
-app.get("/admin/list", (req, res) => {
+app.get("/api/admin/list", (req, res) => {
   var obj = {
     name: req.query.name || '',
   }
@@ -359,7 +370,7 @@ app.get("/admin/list", (req, res) => {
   })
 })
 //添加管理员
-app.get("/add/admin", (req, res) => {
+app.get("/api/add/admin", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("admin", (err, coll) => {
       coll.find({
@@ -403,7 +414,7 @@ app.get("/add/admin", (req, res) => {
   })
 })
 //禁用或启用管理员
-app.get("/update/admin/status", (req, res) => {
+app.get("/api/update/admin/status", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("admin", (err, coll) => {
       var id = req.query.id
