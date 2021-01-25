@@ -327,7 +327,7 @@ app.get("/api/delete/course", (req, res) => {
   })
 })
 //获取课程信息详情(根据id查询)
-app.get("/api/student/info", (req, res) => {
+app.get("/api/course/info", (req, res) => {
   var id = req.query.id
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
@@ -486,4 +486,4 @@ app.get("/delete/teacher", (req, res) => {
     })
   })
 })
-app.listen(3000)
+app.listen(3333)
