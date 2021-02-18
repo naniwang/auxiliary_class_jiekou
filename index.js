@@ -84,15 +84,17 @@ app.get("/api/student/login", (req, res) => {
   })
 })
 //管理员登陆接口
-app.get("/api/manage/login", (req, res) => {
+app.get("/api/admin/login", (req, res) => {
   var account = req.query.account;
   var password = req.query.password;
+  console.log(req.query,'req.query')
   mongodb.connect(db_str, (err, db) => {
-    db.collection("manage", (err, coll) => {
+    db.collection("admin", (err, coll) => {
       coll.find({
         account: account,
         password: password
       }).toArray((err, data) => {
+        console.log(data,'data')
         if (data.length > 0) {
           res.json({
             code: 200,
@@ -121,16 +123,14 @@ app.get("/api/user/info", (req, res) => {
         account: account
       }).toArray((err, data) => {
         if (data.length > 0) {
-          // let callbackData = {}
           res.json({
             code: 200,
             response: data[0]
           })
-          // res.send(data[0])
         } else {
           res.json({
             code: 201,
-            msg: '信息获取失败'
+            msg: '用户信息获取失败'
           })
         }
         db.close();
@@ -140,19 +140,17 @@ app.get("/api/user/info", (req, res) => {
 })
 //查询学生列表
 app.get("/api/student/list", (req, res, next) => {
-  alert('33333333333333')
   var obj = {
-    name: req.query.name || '',
-    stu_no: req.query.stu_no || '',
+    name: req.query.name||undefined,
+    stu_no: req.query.stu_no||undefined,
   }
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
-      coll.find(obj).toArray((err, data) => {
+      coll.find().toArray((err, data) => {
         res.json({
           code: 200,
           response: data
         })
-        // res.send(data)
         db.close();
       })
     })
@@ -160,14 +158,15 @@ app.get("/api/student/list", (req, res, next) => {
 })
 //添加或编辑学生
 app.get("/api/add/student", (req, res) => {
-  var id = 0;
-  id = req.query.id ? req.query.id : 0
+  var stu_no = '';
+  stu_no = req.query.stu_no || ''
   var obj = req.query
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
-      if (id > 0) {
+      console.log(stu_no,'stu_no')
+      if (stu_no) {
         coll.update({
-          id: id
+          stu_no: stu_no
         }, {
           $set: obj
         }, () => {
@@ -175,16 +174,24 @@ app.get("/api/add/student", (req, res) => {
             code: 200,
             response: true
           })
-          // res.send('编辑成功');
           db.close();
         })
       } else {
+        var now=new Date();
+        var month=now.getMonth()+1
+        var day=now.getDate()
+        var hours=now.getHours()
+        var minutes=now.getMinutes()
+        var seconds=now.getSeconds()
+        let stus_no=now.getFullYear()+(month<10?'0'+month:month)+(day<10?'0'+day:day)+(hours<10?'0'+hours:hours)+(minutes<10?'0'+minutes:minutes)+(seconds<10?'0'+seconds:seconds)
+        obj.stu_no=stus_no
+        obj.password=stus_no.substring(stus_no.length-6);
+        obj.gender=parseInt(obj.gender)
         coll.insert(obj, () => {
           res.json({
             code: 200,
             response: true
           })
-          // res.send('添加成功');
           db.close();
         })
       }
@@ -193,7 +200,7 @@ app.get("/api/add/student", (req, res) => {
 })
 //删除学生
 app.get("/api/del/student", (req, res) => {
-  var stu_no = parseInt(req.query.stu_no);
+  var stu_no =req.query.stu_no;
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
       coll.remove({
@@ -203,7 +210,6 @@ app.get("/api/del/student", (req, res) => {
           code: 200,
           response: true
         })
-        // res.send('删除成功');
         db.close();
       })
     })
@@ -211,7 +217,7 @@ app.get("/api/del/student", (req, res) => {
 })
 //修改学生密码
 app.get("/api/update/student/pwd", (req, res) => {
-  var stu_no = parseInt(req.query.stu_no);
+  var stu_no = req.query.stu_no;
   var pwd = req.query.password
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
@@ -244,7 +250,6 @@ app.get("/api/student/info", (req, res) => {
             code: 200,
             response: data[0]
           })
-          // res.send(data[0])
         } else {
           res.json({
             code: 201,
