@@ -1,4 +1,5 @@
 var express = require('express');
+var qs=require('qs')
 var cors = require('cors');
 var app = express()
 var mongodb = require('mongodb').MongoClient;
@@ -56,58 +57,153 @@ app.get('/api/register', (req, res) => {
     })
   })
 })
+/**
+ * 以下为学生操作内容
+ */
 //学生登陆接口
-app.get("/api/student/login", (req, res) => {
-  var account = req.query.account;
-  var password = req.query.password;
-  mongodb.connect(db_str, (err, db) => {
-    db.collection("student", (err, coll) => {
-      coll.find({
-        account: account,
-        password: password
-      }).toArray((err, data) => {
-        if (data.length > 0) {
-          res.json({
-            code: 200,
-            response: 'students'
-          })
+app.post("/api/student/login", (req, res) => {
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    // var obj=qs.parse(pData)
+    var objData=JSON.parse(pData)
+    mongodb.connect(db_str, (err, db) => {
+      db.collection("student", (err, coll) => {
+        coll.find(objData).toArray((err, data) => {
+          if (data.length > 0) {
+            res.json({
+              code: 200,
+              response: 'students'
+            })
+          } else {
+            res.json({
+              code: 201,
+              msg: "用户名或密码错误"
+            })
+          }
           db.close();
-        } else {
+        })
+      })
+    })
+  })
+})
+// 查询个人信息
+app.get('/api/get/personal/info',(req,res)=>{
+  var stu_no=req.query.stu_no
+  mongodb.connect(db_str,(err,db)=>{
+    db.collection('student',(err,coll)=>{
+      coll.find({stu_no:stu_no}).toArray((err,data)=>{
+        if(data.length>0){
           res.json({
-            code: 201,
-            msg: "用户名或密码错误"
+            code:200,
+            response:true
           })
-          db.close();
+        }else{
+          res.json({
+            code:201,
+            msg:'信息获取失败'
+          })
+        }
+        db.close()
+      })
+    })
+  })
+})
+// 修改密码
+app.post('/api/update/personal/pwd',(req,res)=>{
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    var objData=JSON.parse(pData)
+    mongodb.connect(db_str,(err,db)=>{
+      db.collection('student',(err,coll)=>{
+        coll.find({stu_no:objData.stu_no}).toArray((err,data)=>{
+          if(data.length>0){
+            if(data[0].password==objData.oldPwd){
+              coll.update({stu_no:objData.stu_no},{$set:{passwrod:objData.newPwd}},(err1)=>{
+                if(err1){
+                  res.json({
+                    code:201,
+                    msg:'修改失败'
+                  })
+                }else{
+                  res.json({
+                    code:200,
+                    response:true
+                  })
+                }
+              })
+            }else{
+              res.json({
+                code:201,
+                msg:'原密码不正确'
+              })
+            }
+          }else{
+            res.json({
+              code:201,
+              msg:'该用户不存在'
+            })
+          }
+        })
+      })
+    })
+  })
+})
+// 成绩查询
+app.get('/api/inquire/corse',(req,res)=>{
+  mongodb.connect(db_str,(err,db)=>{
+    db.collection('corse',(err,coll)=>{
+      coll.find({stu_no:stu_no}).toArray((err,data)=>{
+        if(data.length>0){
+          res.json({
+            code:200,
+            response:true
+          })
+        }else{
+          res.json({
+            code:201,
+            msg:'查询失败'
+          })
         }
       })
     })
   })
 })
+
+/**
+ * 以下为管理员操作内容
+ */
 //管理员登陆接口
-app.get("/api/admin/login", (req, res) => {
-  var account = req.query.account;
-  var password = req.query.password;
-  console.log(req.query,'req.query')
-  mongodb.connect(db_str, (err, db) => {
-    db.collection("admin", (err, coll) => {
-      coll.find({
-        account: account,
-        password: password
-      }).toArray((err, data) => {
-        console.log(data,'data')
-        if (data.length > 0) {
-          res.json({
-            code: 200,
-            response: 'admins'
-          })
-          db.close();
-        } else {
-          res.json({
-            code: 201,
-            msg: "用户名或密码错误"
-          })
-          db.close();
-        }
+app.post("/api/admin/login", (req, res) => {
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    // var obj=qs.parse(pData)
+    var objData=JSON.parse(pData)
+    mongodb.connect(db_str, (err, db) => {
+      db.collection("admin", (err, coll) => {
+        coll.find(objData).toArray((err, data) => {
+          if (data.length > 0) {
+            res.json({
+              code: 200,
+              response: 'admins'
+            })
+            db.close();
+          } else {
+            res.json({
+              code: 201,
+              msg: "用户名或密码错误"
+            })
+            db.close();
+          }
+        })
       })
     })
   })
@@ -140,13 +236,16 @@ app.get("/api/user/info", (req, res) => {
 })
 //查询学生列表
 app.get("/api/student/list", (req, res, next) => {
-  var obj = {
-    name: req.query.name||undefined,
-    stu_no: req.query.stu_no||undefined,
+  var obj={}
+  if(req.query.name){
+    obj.name = req.query.name
+  }
+  if(req.query.stu_no){
+    obj.stu_no = req.query.stu_no
   }
   mongodb.connect(db_str, (err, db) => {
     db.collection("student", (err, coll) => {
-      coll.find().toArray((err, data) => {
+      coll.find(obj).toArray((err, data) => {
         res.json({
           code: 200,
           response: data
@@ -157,44 +256,64 @@ app.get("/api/student/list", (req, res, next) => {
   })
 })
 //添加或编辑学生
-app.get("/api/add/student", (req, res) => {
-  var stu_no = '';
-  stu_no = req.query.stu_no || ''
-  var obj = req.query
-  mongodb.connect(db_str, (err, db) => {
-    db.collection("student", (err, coll) => {
-      console.log(stu_no,'stu_no')
-      if (stu_no) {
-        coll.update({
-          stu_no: stu_no
-        }, {
-          $set: obj
-        }, () => {
-          res.json({
-            code: 200,
-            response: true
+app.post("/api/add/student", (req, res) => {
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    var obj=JSON.parse(pData)
+    var stu_no = obj.stu_no || ''
+    delete obj._id
+    console.log(obj,'obj')
+    mongodb.connect(db_str, (err, db) => {
+      db.collection("student", (err, coll) => {
+        if (stu_no) {
+          coll.update({
+            stu_no: stu_no
+          }, {
+            $set: obj
+          }, (err1,rest2) => {
+            if(err1){
+              res.json({
+                code: 201,
+                msg: err1.errmsg
+              })
+            }else if(rest2){
+              res.json({
+                code: 200,
+                response: true
+              })
+            }
+            db.close();
           })
-          db.close();
-        })
-      } else {
-        var now=new Date();
-        var month=now.getMonth()+1
-        var day=now.getDate()
-        var hours=now.getHours()
-        var minutes=now.getMinutes()
-        var seconds=now.getSeconds()
-        let stus_no=now.getFullYear()+(month<10?'0'+month:month)+(day<10?'0'+day:day)+(hours<10?'0'+hours:hours)+(minutes<10?'0'+minutes:minutes)+(seconds<10?'0'+seconds:seconds)
-        obj.stu_no=stus_no
-        obj.password=stus_no.substring(stus_no.length-6);
-        obj.gender=parseInt(obj.gender)
-        coll.insert(obj, () => {
-          res.json({
-            code: 200,
-            response: true
+        } else {
+          var now=new Date();
+          var month=now.getMonth()+1
+          var day=now.getDate()
+          var hours=now.getHours()
+          var minutes=now.getMinutes()
+          var seconds=now.getSeconds()
+          let stus_no=now.getFullYear()+(month<10?'0'+month:month)+(day<10?'0'+day:day)+(hours<10?'0'+hours:hours)+(minutes<10?'0'+minutes:minutes)+(seconds<10?'0'+seconds:seconds)
+          obj.stu_no=stus_no
+          obj.password=stus_no.substring(stus_no.length-6);
+          obj.gender=parseInt(obj.gender)
+          coll.insert(obj, (err1,rest2) => {
+            if(err1){
+              res.json({
+                code: 201,
+                msg: err1.errmsg
+              })
+            }else if(rest2){
+              res.json({
+                code: 200,
+                response: true
+              })
+            }
+            db.close();
           })
-          db.close();
-        })
-      }
+        }
+      })
     })
   })
 })
@@ -263,9 +382,12 @@ app.get("/api/student/info", (req, res) => {
 })
 //查询课程列表
 app.get("/api/course/list", (req, res) => {
-  var obj = {
-    name: req.query.name || '',
-    course_no: req.query.course_no || null
+  var obj = {}
+  if(req.query.name){
+    obj.name=req.query.name
+  }
+  if(req.query.course_no){
+    obj.course_no=req.query.course_no
   }
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
@@ -274,42 +396,59 @@ app.get("/api/course/list", (req, res) => {
           code: 200,
           response: data
         })
-        // res.send(data)
         db.close();
       })
     })
   })
 })
 //添加或编辑课程
-app.get("/api/add/course", (req, res) => {
-  var id = 0;
-  id = req.query.id ? req.query.id : 0
-  var obj = req.query
-  mongodb.connect(db_str, (err, db) => {
-    db.collection("course", (err, coll) => {
-      if (id > 0) {
-        coll.update({
-          id: id
-        }, {
-          $set: obj
-        }, () => {
-          res.json({
-            code: 200,
-            response: true
+app.post("/api/add/course", (req, res) => {
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    var obj=JSON.parse(pData)
+    var id = obj._id || 0
+    delete obj._id
+    mongodb.connect(db_str, (err, db) => {
+      db.collection("course", (err, coll) => {
+        if (id != 0) {
+          coll.update({
+            _id: id
+          }, {
+            $set: obj
+          }, (err1,rest2) => {
+            if(err1){
+              res.json({
+                code: 201,
+                msg: err1.errmsg
+              })
+            }else if(rest2){
+              res.json({
+                code: 200,
+                response: true
+              })
+            }
+            db.close();
           })
-          // res.send('编辑成功');
-          db.close();
-        })
-      } else {
-        coll.insert(obj, () => {
-          res.json({
-            code: 200,
-            response: true
+        } else {
+          coll.insert(obj, (err1,rest2) => {
+            if(err1){
+              res.json({
+                code: 201,
+                msg: err1.errmsg
+              })
+            }else if(rest2){
+              res.json({
+                code: 200,
+                response: true
+              })
+            }
+            db.close();
           })
-          // res.send('添加成功');
-          db.close();
-        })
-      }
+        }
+      })
     })
   })
 })
@@ -325,7 +464,6 @@ app.get("/api/delete/course", (req, res) => {
           code: 200,
           response: true
         })
-        // res.send('删除成功');
         db.close();
       })
     })
@@ -350,7 +488,6 @@ app.get("/api/course/info", (req, res) => {
             msg: "信息获取失败"
           })
         }
-        // res.send(data)
         db.close();
       })
     })
@@ -358,8 +495,9 @@ app.get("/api/course/info", (req, res) => {
 })
 //查询管理员列表
 app.get("/api/admin/list", (req, res) => {
-  var obj = {
-    name: req.query.name || '',
+  var obj = {}
+  if(req.query.name){
+    obj.name=req.query.name
   }
   mongodb.connect(db_str, (err, db) => {
     db.collection("admin", (err, coll) => {
@@ -368,52 +506,47 @@ app.get("/api/admin/list", (req, res) => {
           code: 200,
           response: data
         })
-        // res.send(data)
         db.close();
       })
     })
   })
 })
 //添加管理员
-app.get("/api/add/admin", (req, res) => {
-  mongodb.connect(db_str, (err, db) => {
-    db.collection("admin", (err, coll) => {
-      coll.find({
-        account: req.query.account
-      }).toArray((err, data) => {
-        if (data.length > 0) {
-          res.json({
-            code: 201,
-            msg: "该账户已存在"
-          })
-        } else {
-          var id = 0
-          var data = coll.find().sort({
-            id: -1
-          })
+app.post("/api/add/admin", (req, res) => {
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    var obj=JSON.parse(pData)
+    mongodb.connect(db_str, (err, db) => {
+      db.collection("admin", (err, coll) => {
+        coll.find({
+          account: obj.account
+        }).toArray((err, data) => {
           if (data.length > 0) {
-            id = data[0].id++
-          }
-          // var obj = req.query
-          obj.id = id
-          var obj = {
-            id: id,
-            status: 1,
-            name: req.query.name,
-            mobile: req.query.mobile,
-            account: req.query.account,
-            password: req.query.password
-          }
-          coll.insert(obj, () => {
             res.json({
-              code: 200,
-              response: true
+              code: 201,
+              msg: "该账户已存在"
             })
-            // res.send('添加成功');
-            db.close();
-          })
-
-        }
+          } else {
+            obj.status=1
+            coll.insert(obj, (err1) => {
+              if(err1){
+                res.json({
+                  code: 201,
+                  msg: err1.errmsg
+                })
+              }else{
+                res.json({
+                  code: 200,
+                  response: true
+                })
+              }
+              db.close();
+            })
+          }
+        })
       })
     })
   })
@@ -422,24 +555,35 @@ app.get("/api/add/admin", (req, res) => {
 app.get("/api/update/admin/status", (req, res) => {
   mongodb.connect(db_str, (err, db) => {
     db.collection("admin", (err, coll) => {
-      var id = req.query.id
+      var _id = req.query.id
       var status = req.query.status
       coll.update({
-        id: id
+        _id: _id
       }, {
         $set: {
           status: status
         }
-      }, () => {
-        res.json({
-          code: 200,
-          response: true
-        });
+      }, (err1) => {
+        if(err1){
+          res.json({
+            code: 201,
+            msg: err1.errmsg
+          })
+        }else{
+          res.json({
+            code: 200,
+            response: true
+          })
+        }
         db.close();
       })
     })
   })
 })
+
+/**
+ * 以下内容暂不使用
+ */
 
 //查询教师列表
 app.get("/teacher/list", (req, res) => {
