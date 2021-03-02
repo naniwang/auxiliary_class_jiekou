@@ -71,7 +71,7 @@ app.post("/api/student/login", (req, res) => {
     var objData=JSON.parse(pData)
     mongodb.connect(db_str, (err, db) => {
       db.collection("student", (err, coll) => {
-        coll.find(objData).toArray((err, data) => {
+        coll.find({stu_no:objData.account,password:objData.password}).toArray((err, data) => {
           if (data.length > 0) {
             res.json({
               code: 200,
@@ -162,7 +162,7 @@ app.get('/api/inquire/corse',(req,res)=>{
         if(data.length>0){
           res.json({
             code:200,
-            response:true
+            response:data[0]
           })
         }else{
           res.json({
@@ -214,10 +214,14 @@ app.get("/api/user/info", (req, res) => {
   var account = req.query.account
   mongodb.connect(db_str, (err, db) => {
     let collect = type == 'students' ? 'student' : 'admin'
+    var obj={}
+    if(type == 'students'){
+      obj.stu_no=account
+    }else{
+      obj.account=account
+    }
     db.collection(collect, (err, coll) => {
-      coll.find({
-        account: account
-      }).toArray((err, data) => {
+      coll.find(obj).toArray((err, data) => {
         if (data.length > 0) {
           res.json({
             code: 200,
@@ -489,6 +493,49 @@ app.get("/api/course/info", (req, res) => {
           })
         }
         db.close();
+      })
+    })
+  })
+})
+// 查询成绩列表
+app.get('/api/score/list',(req, res)=>{
+  var stu_no=req.query.stu_no
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("score", (err, coll) => {
+      coll.find({stu_no:stu_no}).toArray((err, data) => {
+          res.json({
+            code: 200,
+            response: data
+          })
+        db.close();
+      })
+    })
+  })
+})
+// 添加或编辑成绩
+app.post("/api/add/score", (req, res) => {
+  var pData=''
+  req.on('data',function(postData){
+    pData+=postData
+  })
+  req.on('end',function(){
+    var obj=JSON.parse(pData)
+    mongodb.connect(db_str, (err, db) => {
+      db.collection("score", (err, coll) => {
+        coll.update({stu_no:obj.stu_no},{$set:obj},(err1)=>{
+          if(err1){
+            res.json({
+              code:201,
+              msg:err1.errmsg
+            })
+          }else{
+            res.json({
+              code:200,
+              response:true
+            })
+          }
+          db.close();
+        })
       })
     })
   })
