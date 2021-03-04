@@ -156,6 +156,7 @@ app.post('/api/update/personal/pwd',(req,res)=>{
 })
 // 成绩查询
 app.get('/api/inquire/corse',(req,res)=>{
+  let stu_no=req.query.stu_no
   mongodb.connect(db_str,(err,db)=>{
     db.collection('corse',(err,coll)=>{
       coll.find({stu_no:stu_no}).toArray((err,data)=>{
@@ -167,7 +168,7 @@ app.get('/api/inquire/corse',(req,res)=>{
         }else{
           res.json({
             code:201,
-            msg:'查询失败'
+            msg:'信息获取失败'
           })
         }
       })
@@ -191,10 +192,17 @@ app.post("/api/admin/login", (req, res) => {
       db.collection("admin", (err, coll) => {
         coll.find(objData).toArray((err, data) => {
           if (data.length > 0) {
-            res.json({
-              code: 200,
-              response: 'admins'
-            })
+            if(data[0].status==1){
+              res.json({
+                code: 200,
+                response: 'admins'
+              })
+            }else{
+              res.json({
+                code: 201,
+                msg: '当前用户已离职或被封禁'
+              })
+            }
             db.close();
           } else {
             res.json({
@@ -241,6 +249,9 @@ app.get("/api/user/info", (req, res) => {
 //查询学生列表
 app.get("/api/student/list", (req, res, next) => {
   var obj={}
+  if(req.query.type){
+    obj.type=req.query.type
+  }
   if(req.query.name){
     obj.name = req.query.name
   }
@@ -458,16 +469,23 @@ app.post("/api/add/course", (req, res) => {
 })
 //删除课程
 app.get("/api/delete/course", (req, res) => {
-  var id = parseInt(req.query.id);
+  var id = req.query.id;
   mongodb.connect(db_str, (err, db) => {
     db.collection("course", (err, coll) => {
       coll.remove({
         id: id
-      }, () => {
-        res.json({
-          code: 200,
-          response: true
-        })
+      }, (err1) => {
+        if(err1){
+          res.json({
+            code: 201,
+            msg: '删除失败'
+          })
+        }else{
+          res.json({
+            code: 200,
+            response: true
+          })
+        }
         db.close();
       })
     })
@@ -536,6 +554,54 @@ app.post("/api/add/score", (req, res) => {
           }
           db.close();
         })
+      })
+    })
+  })
+})
+//获取成绩信息详情(根据学号查询)
+app.get("/api/scroe/info", (req, res) => {
+  var stu_no = req.query.stu_no
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("score", (err, coll) => {
+      coll.find({
+        stu_no: stu_no
+      }).toArray((err, data) => {
+        if (data.length > 0) {
+          res.json({
+            code: 200,
+            response: data[0]
+          })
+        } else {
+          res.json({
+            code: 201,
+            msg: "信息获取失败"
+          })
+        }
+        db.close();
+      })
+    })
+  })
+})
+//删除成绩
+app.get("/api/delete/score", (req, res) => {
+  var stu_no = req.query.stu_no;
+  mongodb.connect(db_str, (err, db) => {
+    db.collection("score", (err, coll) => {
+      coll.remove({
+        stu_no: stu_no
+      }, (err1) => {
+        if(err1){
+          res.json({
+            code: 201,
+            msg: '删除失败'
+          })
+        }else{
+          res.json({
+            code: 200,
+            response: true
+          })
+        }
+        db.close();
       })
     })
   })
